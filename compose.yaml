@@ -1,0 +1,45 @@
+name: ratech
+
+services:
+  portainer:
+    image: portainer/portainer-ce:lts
+    container_name: ratech-portainer
+    restart: unless-stopped
+    ports:
+      # Accès privé via tunnel SSH (pas d'exposition Internet directe).
+      - "127.0.0.1:${PORTAINER_PORT:-9443}:9443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+
+  windows:
+    image: dockurr/windows:latest
+    container_name: ratech-windows
+    restart: unless-stopped
+    stop_grace_period: 2m
+    environment:
+      VERSION: "${WINDOWS_VERSION:-11}"
+      LANGUAGE: "${WINDOWS_LANGUAGE:-French}"
+      CPU_CORES: "${WINDOWS_CPU_CORES:-4}"
+      RAM_SIZE: "${WINDOWS_RAM_SIZE:-4G}"
+      DISK_SIZE: "${WINDOWS_DISK_SIZE:-64G}"
+      USERNAME: "${WINDOWS_USERNAME:-ratech}"
+      PASSWORD: "${WINDOWS_PASSWORD:?Definir WINDOWS_PASSWORD dans .env}"
+      AUTOLOGIN: "N"
+      PROTECT: "Y"
+    devices:
+      - /dev/kvm:/dev/kvm
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+    ports:
+      # Visionneuse web (installation et bureau Windows).
+      - "127.0.0.1:${WINDOWS_WEB_PORT:-8006}:8006"
+      # RDP natif par tunnel SSH TCP, jamais ouvert directement sur Internet.
+      - "127.0.0.1:${WINDOWS_RDP_PORT:-3389}:3389/tcp"
+    volumes:
+      - windows_storage:/storage
+
+volumes:
+  portainer_data:
+  windows_storage:

@@ -1,0 +1,18 @@
+name: Validate RATECH stack
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify shell syntax
+        run: |
+          bash -n scripts/install-docker-ubuntu.sh
+          bash -n scripts/preflight.sh
+      - name: Verify Compose syntax (without running Windows)
+        run: docker compose --env-file .env.example config --quiet
